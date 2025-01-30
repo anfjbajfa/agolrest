@@ -1,2 +1,2 @@
 # esrijs
-My first Esri JS Map
+My Esri JS to access ArcGIS online
