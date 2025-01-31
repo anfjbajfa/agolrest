@@ -1,2 +1,2 @@
 # esrijs
-My Esri JS to access ArcGIS online
+My Esri JS to write ArcGIS online
