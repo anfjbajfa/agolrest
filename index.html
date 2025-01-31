@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>AGOL</title>
+    <title>Hello, AGOL write this to the database for me</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="description" content="" />
@@ -25,6 +25,8 @@
         "esri/Graphic",
         "esri/layers/GraphicsLayer",
         "esri/layers/FeatureLayer",
+        "esri/widgets/Editor",
+        "esri/widgets/Legend",
       ], function (
         esriConfig,
         Map,
@@ -36,7 +38,9 @@
         Search,
         Graphic,
         GraphicsLayer,
-        FeatureLayer
+        FeatureLayer,
+        Editor,
+        Legend
       ) {
         esriConfig.apiKey =
           "AAPTxy8BH1VEsoebNVZXo8HurNtM4GaIXKvltgP-vNBdwyPGMg8O1syULj7TkJ6nqk7CDb9QxqYepgagnHfm9zcN-Z4gRSzZeDlLUa0h_rorW0u35yWibqfiUGd3eOXRcDxLSAgA_X61KIF3_M9nKEteA16FgTvbJ0zhSYZmV6X7feDShuLqgA7cNq91MNLnrnNaaEksKSKcWgImE9pGOjv8QT4P44x5H1MCA6YxC4BurBrd3wJ5PhP2_UJ2S_VHxiU_AT1_3f8YsxR9";
@@ -50,8 +54,6 @@
           zoom: 13, // Zoom level
           container: "viewDiv", // Div element
         });
-        // update zoom level
-        view.zoom = 11;
 
         // Updates the view's center point to a pre-determined Point object
         let pt = new Point({
@@ -102,8 +104,8 @@
         const graphicsLayer = new GraphicsLayer();
         map.add(graphicsLayer);
 
+        //Create a point
         const point = {
-          //Create a point
           type: "point",
           longitude: -97.750689, //long lat of Stevie Ray Vaughan Statue
           latitude: 30.263098,
@@ -111,7 +113,7 @@
 
         const simpleMarkerSymbol = {
           type: "simple-marker",
-          style:"square",
+          style: "square",
           color: [0, 90, 255], // Color of blues rock
           outline: {
             color: [0, 0, 130],
@@ -139,24 +141,22 @@
 
         graphicsLayer.add(pointGraphic);
 
-        // Define a pop-up for usaeduLayer
+        // Add college layer //////////////////////////////////////////////////////
         const popupEduusa = {
           title: "EDUs",
           content:
             "<b>LONGITUD:</b> {LONGITUD}<br><b>LATITUDE:</b> {LATITUDE}<br>",
         };
 
-        //adding the Const for the feature layer
         const usaeduLayer = new FeatureLayer({
           url: "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/Colleges_and_Universities_View/FeatureServer",
           //adding the popup here
           outFields: ["LONGITUD", "LATITUDE"],
           popupTemplate: popupEduusa,
         });
-
-        //adding the feature layer to the map
         map.add(usaeduLayer);
 
+        // Add us airport layer //////////////////////////////////////////////////////
         const airportRenderer = {
           type: "simple",
           symbol: {
@@ -166,8 +166,6 @@
             height: "18px",
           },
         };
-
-        //const to make the airport labels
         const airportLabels = {
           symbol: {
             type: "text",
@@ -186,19 +184,16 @@
             expression: "$feature.Fac_Name",
           },
         };
-
-        // adding us airport
         const usaAirportLayer = new FeatureLayer({
-          url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/US_Airports_mad/FeatureServer",
+          url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/USairports/FeatureServer",
           renderer: airportRenderer,
           definitionExpression: "Fac_Type = 'AIRPORT'", //adding sql to filter for airports
-          labelingInfo: [airportLabels] //adding the labels
+          labelingInfo: [airportLabels], //adding the labels
         });
 
         map.add(usaAirportLayer);
 
-
-        // add helicopter
+        // add helicopter layer  //////////////////////////////////////////////////////
         const heliRenderer = {
           type: "simple",
           symbol: {
@@ -208,8 +203,6 @@
             height: "18px",
           },
         };
-
-        //const to make the airport labels
         const HeliLabels = {
           symbol: {
             type: "text",
@@ -228,16 +221,70 @@
             expression: "$feature.Fac_Name",
           },
         };
-
-        // adding us airport
         const usaHeliLayer = new FeatureLayer({
-          url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/US_Airports_mad/FeatureServer",
+          url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/USairports/FeatureServer",
           renderer: heliRenderer,
           definitionExpression: "Fac_Type = 'HELIPORT'", //adding sql to filter for airports
-          labelingInfo: [HeliLabels] //adding the labels
+          labelingInfo: [HeliLabels], //adding the labels
         });
 
         map.add(usaHeliLayer);
+
+
+        //Add my own writable airport layer   //////////////////////////////////////////////////////
+        const myAirportsRenderer = {
+          type: "simple", 
+          symbol: {
+            type: "picture-marker", 
+            url: "./myAir.png",
+            width: "24px",
+            height: "24px",
+             xoffset: 12,
+           yoffset: -12
+          },
+        };
+        const myAirportPopupTemplate = {
+          content: "<b>Airport code:</b> {AirportCode}",
+        };
+        const myAirports = new FeatureLayer({
+          url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/usa_Airport/FeatureServer",
+
+          //adding the popup here
+          outFields: ["AirportCode"],
+          popupTemplate: myAirportPopupTemplate,
+          renderer: myAirportsRenderer,
+        });
+
+        //adding the feature layer to the map
+        map.add(myAirports);
+
+
+        //  Begin Editor constructor    //////////////////////////////////////////////////////
+        const pointInfos = {
+          layer: myAirports,
+        };
+
+        const editor = new Editor({
+          view: view,
+          layerInfos: [pointInfos],
+        });
+
+        let editorExpand = new Expand({
+          expandIcon: "esri-icon-edit",
+          view: view,
+          content: editor,
+          expanded: false,
+        });
+
+        // Add the widget to the view
+        view.ui.add(editorExpand, "top-right");
+
+        // Add Legend     //////////////////////////////////////////////////////
+        let legend = new Legend({
+          view: view,
+        });
+
+        view.ui.add(legend, "bottom-right");
       });
     </script>
 
