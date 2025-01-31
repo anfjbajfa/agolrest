@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Esri Map</title>
+    <title>AGOL</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="description" content="" />
@@ -22,6 +22,9 @@
         "esri/widgets/Expand",
         "esri/widgets/Locate",
         "esri/widgets/Search",
+        "esri/Graphic",
+        "esri/layers/GraphicsLayer",
+        "esri/layers/FeatureLayer",
       ], function (
         esriConfig,
         Map,
@@ -30,25 +33,30 @@
         BasemapGallery,
         Expand,
         Locate,
-        Search
+        Search,
+        Graphic,
+        GraphicsLayer,
+        FeatureLayer
       ) {
+        esriConfig.apiKey =
+          "AAPTxy8BH1VEsoebNVZXo8HurNtM4GaIXKvltgP-vNBdwyPGMg8O1syULj7TkJ6nqk7CDb9QxqYepgagnHfm9zcN-Z4gRSzZeDlLUa0h_rorW0u35yWibqfiUGd3eOXRcDxLSAgA_X61KIF3_M9nKEteA16FgTvbJ0zhSYZmV6X7feDShuLqgA7cNq91MNLnrnNaaEksKSKcWgImE9pGOjv8QT4P44x5H1MCA6YxC4BurBrd3wJ5PhP2_UJ2S_VHxiU_AT1_3f8YsxR9";
         const map = new Map({
-          basemap: "satellite",
+          basemap: "arcgis-topographic",
         });
 
         const view = new MapView({
           map: map,
-          center: [-97.7431, 30.2672], // Longitude, latitude
+          center: [], // Longitude, latitude
           zoom: 13, // Zoom level
           container: "viewDiv", // Div element
         });
         // update zoom level
-        view.zoom = 10;
+        view.zoom = 11;
 
         // Updates the view's center point to a pre-determined Point object
         let pt = new Point({
-          x: 120.1503,
-          y: 30.243,
+          longitude: -97.750689, //long lat of Stevie Ray Vaughan Statue
+          latitude: 30.263098,
           spatialReference: { wkid: 4326 },
         });
         view.center = pt;
@@ -82,14 +90,154 @@
         });
 
         let SearchExpand = new Expand({
-          view:view,
-          content:searchWidget,
-          expandIcon:"search",
-          expanded:false
-        })
+          view: view,
+          content: searchWidget,
+          expandIcon: "search",
+          expanded: false,
+        });
         view.ui.add(SearchExpand, {
           position: "top-left",
         });
+
+        const graphicsLayer = new GraphicsLayer();
+        map.add(graphicsLayer);
+
+        const point = {
+          //Create a point
+          type: "point",
+          longitude: -97.750689, //long lat of Stevie Ray Vaughan Statue
+          latitude: 30.263098,
+        };
+
+        const simpleMarkerSymbol = {
+          type: "simple-marker",
+          style:"square",
+          color: [0, 90, 255], // Color of blues rock
+          outline: {
+            color: [0, 0, 130],
+            width: 1,
+          },
+        };
+
+        // add click action
+        const popupTemplate = {
+          title: "{Name}",
+          content: "{Description}",
+        };
+        const attributes = {
+          Name: "Stevie Ray Vaughan Statue",
+          Description:
+            "A bronze sculpture of Stevie Ray Vaughan by Ralph Helmick",
+        };
+
+        const pointGraphic = new Graphic({
+          geometry: point,
+          symbol: simpleMarkerSymbol,
+          attributes: attributes,
+          popupTemplate: popupTemplate,
+        });
+
+        graphicsLayer.add(pointGraphic);
+
+        // Define a pop-up for usaeduLayer
+        const popupEduusa = {
+          title: "EDUs",
+          content:
+            "<b>LONGITUD:</b> {LONGITUD}<br><b>LATITUDE:</b> {LATITUDE}<br>",
+        };
+
+        //adding the Const for the feature layer
+        const usaeduLayer = new FeatureLayer({
+          url: "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/Colleges_and_Universities_View/FeatureServer",
+          //adding the popup here
+          outFields: ["LONGITUD", "LATITUDE"],
+          popupTemplate: popupEduusa,
+        });
+
+        //adding the feature layer to the map
+        map.add(usaeduLayer);
+
+        const airportRenderer = {
+          type: "simple",
+          symbol: {
+            type: "picture-marker",
+            url: "./airport-icon.png",
+            width: "18px",
+            height: "18px",
+          },
+        };
+
+        //const to make the airport labels
+        const airportLabels = {
+          symbol: {
+            type: "text",
+            color: "#FFFFFF",
+            haloColor: "#5E8D74",
+            haloSize: "2px",
+            font: {
+              size: "12px",
+              family: "Noto Sans",
+              style: "italic",
+              weight: "normal",
+            },
+          },
+          labelPlacement: "above-center",
+          labelExpressionInfo: {
+            expression: "$feature.Fac_Name",
+          },
+        };
+
+        // adding us airport
+        const usaAirportLayer = new FeatureLayer({
+          url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/US_Airports_mad/FeatureServer",
+          renderer: airportRenderer,
+          definitionExpression: "Fac_Type = 'AIRPORT'", //adding sql to filter for airports
+          labelingInfo: [airportLabels] //adding the labels
+        });
+
+        map.add(usaAirportLayer);
+
+
+        // add helicopter
+        const heliRenderer = {
+          type: "simple",
+          symbol: {
+            type: "picture-marker",
+            url: "./helicopter.png",
+            width: "18px",
+            height: "18px",
+          },
+        };
+
+        //const to make the airport labels
+        const HeliLabels = {
+          symbol: {
+            type: "text",
+            color: "#FFFFFF",
+            haloColor: "#5E8D74",
+            haloSize: "2px",
+            font: {
+              size: "12px",
+              family: "Noto Sans",
+              style: "italic",
+              weight: "normal",
+            },
+          },
+          labelPlacement: "above-center",
+          labelExpressionInfo: {
+            expression: "$feature.Fac_Name",
+          },
+        };
+
+        // adding us airport
+        const usaHeliLayer = new FeatureLayer({
+          url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/US_Airports_mad/FeatureServer",
+          renderer: heliRenderer,
+          definitionExpression: "Fac_Type = 'HELIPORT'", //adding sql to filter for airports
+          labelingInfo: [HeliLabels] //adding the labels
+        });
+
+        map.add(usaHeliLayer);
       });
     </script>
 
@@ -103,7 +251,6 @@
         height: 100%;
         width: 100%;
       }
-
     </style>
   </head>
   <body>
